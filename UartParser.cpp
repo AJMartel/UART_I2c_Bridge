@@ -1,5 +1,4 @@
-#include "UART_I2c_Bridge.h"
-
+#include "UartParser.h"
 
 static constexpr uint8_t kHexLength = 4; // format example : 0xAB
 
