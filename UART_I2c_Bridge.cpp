@@ -1,9 +1,9 @@
 #include "UART_I2c_Bridge.h"
-#include "Arduino.h"
 
-static constexpr uint8_t kHexLength = 4; // format 0xAB
 
-void Uart2I2CBridge::print(const String &originalString) {
+static constexpr uint8_t kHexLength = 4; // format example : 0xAB
+
+void UartParser::print(const String &originalString) {
   Serial.println("Got : " + originalString);
   Serial.print(destination_ + "   " + expectedByteCount_ + "   ");
   for (const auto &sendByte : sendBytes_) {
@@ -13,7 +13,7 @@ void Uart2I2CBridge::print(const String &originalString) {
   Serial.println(expectedByteCount_);
 }
 
-void Uart2I2CBridge::readSendBytes(const String &in, long int sendByteCount,
+void UartParser::readSendBytes(const String &in, long int sendByteCount,
                                    uint8_t &newPos, uint8_t &commaOffset) {
 
   auto posSendByteBegin = kHexLength + 3;
@@ -31,7 +31,7 @@ void Uart2I2CBridge::readSendBytes(const String &in, long int sendByteCount,
   newPos = posSendByteBegin + i * kHexLength + commaOffset + 1;
 }
 
-void Uart2I2CBridge::readFormattedString(bool isPrint = true) {
+void UartParser::readFormattedString(bool isPrint = true) {
   // Format: 0x<HEX Address of Destination>:<Number of send Bytes>:0x<Send
   // Byte0>[,0x<Send Byte1>[,...]]:<Number of expected bytes>
   // Example1 : 0x40:1:0x12:1

@@ -1,13 +1,12 @@
 #pragma once
-
+#include "Arduino.h"
 #include "StandardCplusplus.h"
 #include <stdint.h>
 #include <vector>
 
-class Uart2I2CBridge {
+class UartParser {
 public:
   void readFormattedString(bool isPrint = true);
-  void Uart2I2CBridge::print();
   void print(const String &originalString = "");
 
 private:

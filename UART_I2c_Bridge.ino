@@ -1,7 +1,7 @@
 
 #include "UART_I2c_Bridge.h"
 
-Uart2I2CBridge bridge;
+UartParser bridge;
 
 void setup() {
   // initialize serial:
