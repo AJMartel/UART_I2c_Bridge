@@ -16,7 +16,6 @@ void Uart2I2CBridge::print(const String &originalString) {
 void Uart2I2CBridge::readSendBytes(const String &in, long int sendByteCount,
                                    uint8_t &newPos, uint8_t &commaOffset) {
 
-  ;
   auto posSendByteBegin = kHexLength + 3;
   auto i = 0;
   commaOffset = 0;
@@ -40,13 +39,14 @@ void Uart2I2CBridge::readFormattedString(bool isPrint = true) {
 
   while (Serial.available() == 0)
     ;
+
   String str = Serial.readString();
 
   destination_ = str.substring(0, kHexLength);
   sendByteCount_ = str.substring(kHexLength + 1, kHexLength + 2);
 
   uint8_t posExpectedByteCount = 0, commaOffset = 0;
-  ;
+
   readSendBytes(str, sendByteCount_.toInt(), posExpectedByteCount, commaOffset);
 
   expectedByteCount_ =
