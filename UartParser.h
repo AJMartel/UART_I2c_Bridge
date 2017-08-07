@@ -9,6 +9,10 @@ public:
   void readFormattedString(bool isPrint = true);
   void print(const String &originalString = "");
 
+  inline int getDestination() { return destination_.toInt(); }
+  inline std::vector<String> &getSendBytes() { return sendBytes_; }
+  inline int getExpectedByteCount() { return expectedByteCount_.toInt(); }
+
 private:
   void readSendBytes(const String &in, long int sendByteCount, uint8_t &newPos,
                      uint8_t &commaOffset);

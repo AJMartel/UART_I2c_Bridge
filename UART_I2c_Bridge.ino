@@ -1,14 +1,16 @@
 #include "UartParser.h"
+#include "I2CWrap.h"
 
-UartParser bridge;
+UartParser uartRequest;
+I2CWrap i2cWrap;
 
 void setup() {
-  // initialize serial:
   Serial.begin(9600);
   Serial.println("Setup ready.");
 }
 
 void loop() {
-  bridge.readFormattedString();
+  uartRequest.readFormattedString();
+  i2cWrap.run(uartRequest.getDestination(), uartRequest.getSendBytes(), uartRequest.getExpectedByteCount());
 }
 

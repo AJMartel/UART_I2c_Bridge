@@ -13,7 +13,7 @@ void UartParser::print(const String &originalString) {
 }
 
 void UartParser::readSendBytes(const String &in, long int sendByteCount,
-                                   uint8_t &newPos, uint8_t &commaOffset) {
+                               uint8_t &newPos, uint8_t &commaOffset) {
 
   auto posSendByteBegin = kHexLength + 3;
   auto i = 0;
