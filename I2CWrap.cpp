@@ -1,6 +1,8 @@
 #include "I2CWrap.h"
 #include <Wire.h>
 
+#include "UartParser.h" // needed for verbs
+
 #if ARDUINO >= 100
 #define WireTransfer Wire.write
 #else
@@ -35,28 +37,32 @@ unsigned int hexToDec(const String &hexString) {
   return decValue;
 }
 
-void I2CWrap::run(const int &destination, const std::vector<String> &sendBytes,
-                  const int &expectedByteCount) {
+void I2CWrap::run(const String& verb, const String& destination, const std::vector<String> &sendBytes,
+                  const String& expectedByteCount) {
+
+  Serial.print("Verb : "); 
+  Serial.println(verb);
 
   Serial.print("Destination : ");
   Serial.println(destination);
 
-  Wire.beginTransmission(destination);
+  //Wire.beginTransmission(static_cast<uint8_t>(hexToDec(destination)));
 
   auto remoteRegister = hexToDec(sendBytes[0]);
   // WireTransfer(remoteRegister);
   Serial.print("RemoteRegister : ");
   Serial.println(remoteRegister);
 
-  if (sendBytes.rbegin() != sendBytes.rend() - 1) {
-    Serial.println();
-    Serial.println("Argument bytes : ");
+  if (sendBytes.size()>1) {
+    
+    Serial.print("Argument bytes : ");
+  
+    for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend(); ++it) {
+      // WireTransfer(hexToDec(*it));
+      Serial.print(hexToDec(*it)); Serial.print(" ");
+    }
+    Serial.println(".");  
   }
-
-  for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend() - 1; ++it) {
-    // WireTransfer(hexToDec(*it));
-    Serial.println(hexToDec(*it));
-  }
-
-  Wire.endTransmission();
+  
+  //Wire.endTransmission();
 }

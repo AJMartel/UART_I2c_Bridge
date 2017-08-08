@@ -7,8 +7,8 @@
 
 class I2CWrap {
 public:
-  void run(const int &destination, const std::vector<String> &sendBytes,
-           const int &expectedByteCount);
+  void run(const String& verb, const String& destination, const std::vector<String> &sendBytes,
+           const String& expectedByteCount);
 
 private:
   std::vector<uint8_t> response_;

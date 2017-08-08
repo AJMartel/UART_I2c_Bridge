@@ -1,55 +1,66 @@
 #include "UartParser.h"
 
-static constexpr uint8_t kHexLength = 4; // format example : 0xAB
+
+const String UartParser::kVerbRead = "R";
+const String UartParser::kVerbWrite = "W";
 
 void UartParser::print(const String &originalString) {
   Serial.println("Got : " + originalString);
-  Serial.print(destination_ + "   " + expectedByteCount_ + "   ");
+
+  Serial.print(verb_ + "   ");
+  Serial.print(destination_ + "   ");
   for (const auto &sendByte : sendBytes_) {
     Serial.print(sendByte + "   ");
   }
 
-  Serial.println(expectedByteCount_);
+  Serial. println(requested_bytes_);
 }
 
-void UartParser::readSendBytes(const String &in, long int sendByteCount,
-                               uint8_t &newPos, uint8_t &commaOffset) {
+uint8_t UartParser::readSendBytes(const String &in) {
 
-  auto posSendByteBegin = kHexLength + 3;
+  
   auto i = 0;
-  commaOffset = 0;
-  for (; i < sendByteCount; ++i) {
+  auto commaOffset = 0;
+  auto initialOffset = kVerbLength_+1+kHexLength_+1;
+  auto finalPos = 0;
+  
+  for (; ; ++i) {
 
-    if (i > 0)
+    if (i > 0){
       commaOffset = 1;
-    String sendByte = in.substring(
-        posSendByteBegin + i * kHexLength + commaOffset,
-        posSendByteBegin + kHexLength + i * kHexLength + commaOffset);
+    }
+      
+    auto start = initialOffset + i * kHexLength_ + commaOffset;
+    auto end = initialOffset + (i+1) * kHexLength_ + commaOffset;
+    String sendByte = in.substring(start, end);
+    
     sendBytes_.push_back(sendByte);
+    finalPos = end;
+    if(',' != in [end]) break;
   }
-  newPos = posSendByteBegin + i * kHexLength + commaOffset + 1;
+
+  return finalPos;
 }
 
 void UartParser::readFormattedString(bool isPrint = true) {
   // Format: 0x<HEX Address of Destination>:<Number of send Bytes>:0x<Send
-  // Byte0>[,0x<Send Byte1>[,...]]:<Number of expected bytes>
-  // Example1 : 0x40:1:0x12:1
-  // Example2 : 0x40:2:0x12,0xEF:1
+  // Byte0>[,0x<Send Byte1>[,...]]
+  // Example1 : W:0x40:0x12
+  // Example2 : R:0x40:0x12,0xEF:1
 
   while (Serial.available() == 0)
     ;
 
   String str = Serial.readString();
 
-  destination_ = str.substring(0, kHexLength);
-  sendByteCount_ = str.substring(kHexLength + 1, kHexLength + 2);
-
-  uint8_t posExpectedByteCount = 0, commaOffset = 0;
-
-  readSendBytes(str, sendByteCount_.toInt(), posExpectedByteCount, commaOffset);
-
-  expectedByteCount_ =
-      str.substring(posExpectedByteCount, posExpectedByteCount + 1);
+  verb_ = str.substring(0, kVerbLength_);
+  destination_ = str.substring(kVerbLength_+1, kHexLength_+kVerbLength_+1);
+  
+  int posInInput = readSendBytes(str);
+  if(posInInput < str.length()){
+    requested_bytes_ = str.substring(posInInput+1, str.length());
+  }
+  
 
   if (isPrint) {
     print(str);

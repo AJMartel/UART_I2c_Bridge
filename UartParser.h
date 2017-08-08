@@ -9,16 +9,28 @@ public:
   void readFormattedString(bool isPrint = true);
   void print(const String &originalString = "");
 
-  inline int getDestination() { return destination_.toInt(); }
+  const String& getVerb() { return verb_; }
+  const String& getDestination() { return destination_; }
   inline std::vector<String> &getSendBytes() { return sendBytes_; }
-  inline int getExpectedByteCount() { return expectedByteCount_.toInt(); }
+  const String& getExpectedByteCount(){ return requested_bytes_; }
 
+  
+  void clear(){
+    destination_ = "";
+    sendBytes_.clear();
+  }
+
+  static constexpr uint8_t kHexLength_ = 4; // format example : 0xAB
+  static constexpr uint8_t kVerbLength_=1; // example : W = Write, R = Read
+  static const String kVerbRead;
+  static const String kVerbWrite;
+
+  
 private:
-  void readSendBytes(const String &in, long int sendByteCount, uint8_t &newPos,
-                     uint8_t &commaOffset);
+  uint8_t readSendBytes(const String &in);
 
+  String verb_;
   String destination_;
-  String sendByteCount_;
-  String expectedByteCount_;
+  String requested_bytes_;
   std::vector<String> sendBytes_;
 };
