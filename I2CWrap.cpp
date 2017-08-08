@@ -74,20 +74,20 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
 
   if (sendBytes.size()>1) {
     Serial.print("Argument bytes : ");
-    for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend()-1; ++it) {
+    for (auto it = sendBytes.begin()+1; it != sendBytes.end(); ++it) {
       Serial.print(hexToDec(*it)); Serial.print(" ");
     }
     Serial.println(".");  
   }
-
+  Serial.println("----------------------");
 
   uint8_t response = 255;
-  Wire.beginTransmission(destinationAddress);
-  WireTransferWrite(remoteRegister);   
+    
   
   if(UartParser::kVerbRead == verb){
-    //WireTransferRead(remoteRegister);
-    
+
+    Wire.beginTransmission(destinationAddress);
+    WireTransferWrite(remoteRegister); 
     response = Wire.endTransmission();
     decodeResponse(response, "[Read] Send remote register address: ");
     delay(1);
@@ -100,7 +100,9 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
     for(uint8_t i = 0; i< expectedReplyCount && i < 8;++i){
       reply[i] = WireTransferRead(); 
     }
-    Wire.endTransmission();
+    
+    response = Wire.endTransmission(); // needs to be immediately after write/read to avoid timeout
+    
     Serial.print("Reply: ");
     for(uint8_t i = 0; i< expectedReplyCount && i < 8;++i){
       String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
@@ -109,29 +111,43 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
     Serial.println();
     
   } else if (UartParser::kVerbWrite == verb) {
-    /*for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend()-1; ++it) {
-      response = WireTransfer(hexToDec(*it));
-    }*/
+    uint8_t toSend[8], i = 0;
+
+    for (auto it = sendBytes.begin()+1; it != sendBytes.end() && i < 8; ++it, ++i) {
+      toSend[i] = hexToDec(*it);
+    }
+
+    Wire.beginTransmission(destinationAddress);
+    delay(1);
+    WireTransferWrite(remoteRegister); 
+    response = Wire.endTransmission();
+    decodeResponse(response, "[Write] Send remote register address: ");
+    delay(1);
+    
+    Wire.beginTransmission(destinationAddress);
+    for(i = 0; i< sendBytes.size() && i < 8;++i){
+      WireTransferWrite(toSend[i]); 
+      delay(1);
+    }
+    
+    response = Wire.endTransmission();// needs to be immediately after write/read to avoid timeout
+    
   }
 
-  
-  
-  
-  
-  Wire.endTransmission();
+ 
   decodeResponse(response, "[End] ");
   Serial.println();
 }
 
 void I2CWrap::decodeResponse(uint8_t response, const String& stage){
-    Serial.println("----------------------");
+    
 
     Serial.print(stage+" ");
     switch(response){
       case 0: Serial.println("Success."); break;
       case 1:Serial.println("Data too long to fit in transmit buffer."); break;
       case 2:Serial.println("Received NACK on transmit of address."); break;
-      case 3:Serial.println("received NACK on transmit of data."); break;
+      case 3:Serial.println("Received NACK on transmit of data."); break;
       case 4:Serial.println("Other error."); break;
       case 255: Serial.println("No errorcode set."); break;
     }
