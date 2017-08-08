@@ -39,6 +39,14 @@ unsigned int hexToDec(const String &hexString) {
   return decValue;
 }
 
+String decToHex(byte decValue, byte desiredStringLength) {
+  
+  String hexString = String(decValue, HEX);
+  while (hexString.length() < desiredStringLength) hexString = "0" + hexString;
+  
+  return "0x"+hexString;
+}
+
 void I2CWrap::run(const String& verb, const String& destination, const std::vector<String> &sendBytes,
                   const String& expectedByteCount) {
 
@@ -48,7 +56,9 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
   Serial.print("Destination : ");
   Serial.println(destination);
 
+  auto destinationAddress = static_cast<uint8_t>(hexToDec(destination));
   auto remoteRegister = hexToDec(sendBytes[0]);
+  auto expectedReplyCount = static_cast<uint8_t>(hexToDec(expectedByteCount));
   // WireTransfer(remoteRegister);
   Serial.print("RemoteRegister : ");
   Serial.println(remoteRegister);
@@ -60,27 +70,70 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
   } else if (UartParser::kVerbWrite == verb) {
     
   }
-  
 
-  
-  if(UartParser::kVerbRead == verb){
-    //WireTransferRead(remoteRegister);
-  } else if (UartParser::kVerbWrite == verb) {
-    //WireTransferWrite(remoteRegister);
-  }
-
-  Wire.beginTransmission(static_cast<uint8_t>(hexToDec(destination)));
 
   if (sendBytes.size()>1) {
-    
     Serial.print("Argument bytes : ");
-  
-    for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend(); ++it) {
-      // WireTransfer(hexToDec(*it));
+    for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend()-1; ++it) {
       Serial.print(hexToDec(*it)); Serial.print(" ");
     }
     Serial.println(".");  
   }
+
+
+  uint8_t response = 255;
+  Wire.beginTransmission(destinationAddress);
+  WireTransferWrite(remoteRegister);   
+  
+  if(UartParser::kVerbRead == verb){
+    //WireTransferRead(remoteRegister);
+    
+    response = Wire.endTransmission();
+    decodeResponse(response, "[Read] Send remote register address: ");
+    delay(1);
+    
+    Wire.beginTransmission(destinationAddress);
+    Wire.requestFrom(destinationAddress, expectedReplyCount);
+    while(!Wire.available()) {};
+
+    uint8_t reply[8];
+    for(uint8_t i = 0; i< expectedReplyCount && i < 8;++i){
+      reply[i] = WireTransferRead(); 
+    }
+    Wire.endTransmission();
+    Serial.print("Reply: ");
+    for(uint8_t i = 0; i< expectedReplyCount && i < 8;++i){
+      String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
+      Serial.print(formattedReply); Serial.print("   ");
+    }
+    Serial.println();
+    
+  } else if (UartParser::kVerbWrite == verb) {
+    /*for (const auto &it = sendBytes.rbegin(); it != sendBytes.rend()-1; ++it) {
+      response = WireTransfer(hexToDec(*it));
+    }*/
+  }
+
+  
+  
+  
   
   Wire.endTransmission();
+  decodeResponse(response, "[End] ");
+  Serial.println();
 }
+
+void I2CWrap::decodeResponse(uint8_t response, const String& stage){
+    Serial.println("----------------------");
+
+    Serial.print(stage+" ");
+    switch(response){
+      case 0: Serial.println("Success."); break;
+      case 1:Serial.println("Data too long to fit in transmit buffer."); break;
+      case 2:Serial.println("Received NACK on transmit of address."); break;
+      case 3:Serial.println("received NACK on transmit of data."); break;
+      case 4:Serial.println("Other error."); break;
+      case 255: Serial.println("No errorcode set."); break;
+    }
+}
+

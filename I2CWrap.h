@@ -11,5 +11,7 @@ public:
            const String& expectedByteCount);
 
 private:
+  void decodeResponse(uint8_t response, const String& stage="");
+
   std::vector<uint8_t> response_;
 };
