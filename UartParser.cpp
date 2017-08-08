@@ -45,8 +45,8 @@ uint8_t UartParser::readSendBytes(const String &in) {
 void UartParser::readFormattedString(bool isPrint = true) {
   // Format: 0x<HEX Address of Destination>:<Number of send Bytes>:0x<Send
   // Byte0>[,0x<Send Byte1>[,...]]
-  // Example1 : W:0x40:0x12
-  // Example2 : R:0x40:0x12,0xEF:1
+  // Example1 : W:0x40:0x12,0xEF
+  // Example2 : R:0x40:0x12:1
 
   while (Serial.available() == 0)
     ;
@@ -58,7 +58,7 @@ void UartParser::readFormattedString(bool isPrint = true) {
   
   int posInInput = readSendBytes(str);
   if(posInInput < str.length()){
-    requested_bytes_ = str.substring(posInInput+1, str.length());
+    requested_bytes_ = str.substring(posInInput+1, str.length()-1);
   }
   
 

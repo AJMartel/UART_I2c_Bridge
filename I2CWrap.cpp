@@ -4,9 +4,11 @@
 #include "UartParser.h" // needed for verbs
 
 #if ARDUINO >= 100
-#define WireTransfer Wire.write
+#define WireTransferWrite Wire.write
+#define WireTransferRead Wire.read
 #else
-#define WireTransfer Wire.send
+#define WireTransferWrite Wire.send
+#define WireTransferRead Wire.receive
 #endif
 
 // adapted from
@@ -46,12 +48,28 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
   Serial.print("Destination : ");
   Serial.println(destination);
 
-  //Wire.beginTransmission(static_cast<uint8_t>(hexToDec(destination)));
-
   auto remoteRegister = hexToDec(sendBytes[0]);
   // WireTransfer(remoteRegister);
   Serial.print("RemoteRegister : ");
   Serial.println(remoteRegister);
+
+  if(UartParser::kVerbRead == verb){
+    Serial.print("Expecting : ");
+    Serial.print(expectedByteCount);
+    Serial.println(" bytes.");
+  } else if (UartParser::kVerbWrite == verb) {
+    
+  }
+  
+
+  
+  if(UartParser::kVerbRead == verb){
+    //WireTransferRead(remoteRegister);
+  } else if (UartParser::kVerbWrite == verb) {
+    //WireTransferWrite(remoteRegister);
+  }
+
+  Wire.beginTransmission(static_cast<uint8_t>(hexToDec(destination)));
 
   if (sendBytes.size()>1) {
     
@@ -64,5 +82,5 @@ void I2CWrap::run(const String& verb, const String& destination, const std::vect
     Serial.println(".");  
   }
   
-  //Wire.endTransmission();
+  Wire.endTransmission();
 }
