@@ -105,9 +105,6 @@ void I2CWrap::run(const String &verb, const String &destination,
       reply[i] = WireTransferRead();
     }
 
-    response = Wire.endTransmission(); // needs to be immediately after
-                                       // write/read to avoid timeout
-
     Serial.print("Reply: ");
     for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
       String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
@@ -131,10 +128,9 @@ void I2CWrap::run(const String &verb, const String &destination,
     for (i = 0; i < sendBytes.size() && i < 8; ++i) {
       WireTransferWrite(toSend[i]);
     }
-    response = Wire.endTransmission(); // needs to be immediately after
-                                       // write/read to avoid timeout
   }
 
+  response = Wire.endTransmission();
   decodeResponse(response, "[End] ");
   Serial.println();
 }
