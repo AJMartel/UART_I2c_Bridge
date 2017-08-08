@@ -6,6 +6,7 @@
 
 class UartParser {
 public:
+  UartParser(bool verbose = true) { verbose_ = verbose; }
   void readFormattedString(bool isPrint = true);
   void print(const String &originalString = "");
 
@@ -28,6 +29,7 @@ private:
   uint8_t readSendBytes(const String &in);
 
   String verb_;
+  bool verbose_;
   String destination_;
   String requested_bytes_;
   std::vector<String> sendBytes_;

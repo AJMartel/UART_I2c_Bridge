@@ -67,8 +67,7 @@ void I2CWrap::run(const String &verb, const String &destination,
   }
 
   uint8_t response = Wire.endTransmission();
-  decodeResponse(response, "[End] ");
-  Serial.println();
+  printResponse(response, "[End] ");
 }
 
 void I2CWrap::read(uint8_t destinationAddress, uint8_t remoteRegister,
@@ -79,7 +78,7 @@ void I2CWrap::read(uint8_t destinationAddress, uint8_t remoteRegister,
   WireTransferWrite(remoteRegister);
   response = Wire.endTransmission();
 
-  decodeResponse(response, "[Read] Send remote register address: ");
+  printResponse(response, "[Read] Send remote register address: ");
   delay(1);
 
   Wire.beginTransmission(destinationAddress);
@@ -110,6 +109,10 @@ void I2CWrap::write(uint8_t destinationAddress, uint8_t remoteRegister,
 }
 
 void I2CWrap::printResponse() {
+
+  if (!verbose_)
+    return;
+
   Serial.print("Reply: ");
   for (auto &it : response_) {
     String formattedReply = decToHex(static_cast<byte>(it), 2);
@@ -123,6 +126,10 @@ void I2CWrap::printInfo(const String &verb, const String &destination,
                         const String &expectedByteCount,
                         const std::vector<String> &sendBytes,
                         uint8_t remoteRegister) {
+
+  if (!verbose_)
+    return;
+
   Serial.print("Verb : ");
   Serial.println(verb);
 
@@ -150,7 +157,10 @@ void I2CWrap::printInfo(const String &verb, const String &destination,
   Serial.println("----------------------");
 }
 
-void I2CWrap::decodeResponse(uint8_t response, const String &stage) {
+void I2CWrap::printResponse(uint8_t response, const String &stage) {
+
+  if (!verbose_)
+    return;
 
   Serial.print(stage + " ");
   switch (response) {
@@ -173,4 +183,5 @@ void I2CWrap::decodeResponse(uint8_t response, const String &stage) {
     Serial.println("No errorcode set.");
     break;
   }
+  Serial.println();
 }

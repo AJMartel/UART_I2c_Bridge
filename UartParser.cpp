@@ -4,6 +4,8 @@ const String UartParser::kVerbRead = "R";
 const String UartParser::kVerbWrite = "W";
 
 void UartParser::print(const String &originalString) {
+  if (!verbose_)
+    return;
   Serial.println("Got : " + originalString);
 
   Serial.print(verb_ + "   ");
