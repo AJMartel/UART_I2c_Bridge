@@ -40,116 +40,126 @@ unsigned int hexToDec(const String &hexString) {
 }
 
 String decToHex(byte decValue, byte desiredStringLength) {
-  
+
   String hexString = String(decValue, HEX);
-  while (hexString.length() < desiredStringLength) hexString = "0" + hexString;
-  
-  return "0x"+hexString;
+  while (hexString.length() < desiredStringLength)
+    hexString = "0" + hexString;
+
+  return "0x" + hexString;
 }
 
-void I2CWrap::run(const String& verb, const String& destination, const std::vector<String> &sendBytes,
-                  const String& expectedByteCount) {
+void I2CWrap::run(const String &verb, const String &destination,
+                  const std::vector<String> &sendBytes,
+                  const String &expectedByteCount) {
 
-  Serial.print("Verb : "); 
+  Serial.print("Verb : ");
   Serial.println(verb);
 
   Serial.print("Destination : ");
   Serial.println(destination);
 
   auto destinationAddress = static_cast<uint8_t>(hexToDec(destination));
-  auto remoteRegister = hexToDec(sendBytes[0]);
+  uint8_t remoteRegister = hexToDec(sendBytes[0]);
   auto expectedReplyCount = static_cast<uint8_t>(hexToDec(expectedByteCount));
-  // WireTransfer(remoteRegister);
+
   Serial.print("RemoteRegister : ");
   Serial.println(remoteRegister);
 
-  if(UartParser::kVerbRead == verb){
+  if (UartParser::kVerbRead == verb) {
     Serial.print("Expecting : ");
     Serial.print(expectedByteCount);
     Serial.println(" bytes.");
   } else if (UartParser::kVerbWrite == verb) {
-    
   }
 
-
-  if (sendBytes.size()>1) {
+  if (sendBytes.size() > 1) {
     Serial.print("Argument bytes : ");
-    for (auto it = sendBytes.begin()+1; it != sendBytes.end(); ++it) {
-      Serial.print(hexToDec(*it)); Serial.print(" ");
+    for (auto it = sendBytes.begin() + 1; it != sendBytes.end(); ++it) {
+      Serial.print(hexToDec(*it));
+      Serial.print(" ");
     }
-    Serial.println(".");  
+    Serial.println(".");
   }
   Serial.println("----------------------");
 
   uint8_t response = 255;
-    
-  
-  if(UartParser::kVerbRead == verb){
+
+  if (UartParser::kVerbRead == verb) {
+
+    // --- Register pointer set ---
 
     Wire.beginTransmission(destinationAddress);
-    WireTransferWrite(remoteRegister); 
+    WireTransferWrite(remoteRegister);
     response = Wire.endTransmission();
+
     decodeResponse(response, "[Read] Send remote register address: ");
     delay(1);
-    
+
     Wire.beginTransmission(destinationAddress);
     Wire.requestFrom(destinationAddress, expectedReplyCount);
-    while(!Wire.available()) {};
+    while (!Wire.available()) {
+    };
 
     uint8_t reply[8];
-    for(uint8_t i = 0; i< expectedReplyCount && i < 8;++i){
-      reply[i] = WireTransferRead(); 
+    for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
+      reply[i] = WireTransferRead();
     }
-    
-    response = Wire.endTransmission(); // needs to be immediately after write/read to avoid timeout
-    
+
+    response = Wire.endTransmission(); // needs to be immediately after
+                                       // write/read to avoid timeout
+
     Serial.print("Reply: ");
-    for(uint8_t i = 0; i< expectedReplyCount && i < 8;++i){
+    for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
       String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
-      Serial.print(formattedReply); Serial.print("   ");
+      Serial.print(formattedReply);
+      Serial.print("   ");
     }
     Serial.println();
-    
+
   } else if (UartParser::kVerbWrite == verb) {
+
     uint8_t toSend[8], i = 0;
 
-    for (auto it = sendBytes.begin()+1; it != sendBytes.end() && i < 8; ++it, ++i) {
+    for (auto it = sendBytes.begin() + 1; it != sendBytes.end() && i < 8;
+         ++it, ++i) {
       toSend[i] = hexToDec(*it);
     }
 
     Wire.beginTransmission(destinationAddress);
-    delay(1);
-    WireTransferWrite(remoteRegister); 
-    response = Wire.endTransmission();
-    decodeResponse(response, "[Write] Send remote register address: ");
-    delay(1);
-    
-    Wire.beginTransmission(destinationAddress);
-    for(i = 0; i< sendBytes.size() && i < 8;++i){
-      WireTransferWrite(toSend[i]); 
-      delay(1);
+    WireTransferWrite(remoteRegister);
+
+    for (i = 0; i < sendBytes.size() && i < 8; ++i) {
+      WireTransferWrite(toSend[i]);
     }
-    
-    response = Wire.endTransmission();// needs to be immediately after write/read to avoid timeout
-    
+    response = Wire.endTransmission(); // needs to be immediately after
+                                       // write/read to avoid timeout
   }
 
- 
   decodeResponse(response, "[End] ");
   Serial.println();
 }
 
-void I2CWrap::decodeResponse(uint8_t response, const String& stage){
-    
+void I2CWrap::decodeResponse(uint8_t response, const String &stage) {
 
-    Serial.print(stage+" ");
-    switch(response){
-      case 0: Serial.println("Success."); break;
-      case 1:Serial.println("Data too long to fit in transmit buffer."); break;
-      case 2:Serial.println("Received NACK on transmit of address."); break;
-      case 3:Serial.println("Received NACK on transmit of data."); break;
-      case 4:Serial.println("Other error."); break;
-      case 255: Serial.println("No errorcode set."); break;
-    }
+  Serial.print(stage + " ");
+  switch (response) {
+  case 0:
+    Serial.println("Success.");
+    break;
+  case 1:
+    Serial.println("Data too long to fit in transmit buffer.");
+    break;
+  case 2:
+    Serial.println("Received NACK on transmit of address.");
+    break;
+  case 3:
+    Serial.println("Received NACK on transmit of data.");
+    break;
+  case 4:
+    Serial.println("Other error.");
+    break;
+  case 255:
+    Serial.println("No errorcode set.");
+    break;
+  }
 }
-
