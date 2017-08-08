@@ -52,6 +52,8 @@ void I2CWrap::run(const String &verb, const String &destination,
                   const std::vector<String> &sendBytes,
                   const String &expectedByteCount) {
 
+  response_.clear();
+
   Serial.print("Verb : ");
   Serial.println(verb);
 
@@ -59,7 +61,7 @@ void I2CWrap::run(const String &verb, const String &destination,
   Serial.println(destination);
 
   auto destinationAddress = static_cast<uint8_t>(hexToDec(destination));
-  uint8_t remoteRegister = hexToDec(sendBytes[0]);
+  auto remoteRegister = hexToDec(sendBytes[0]);
   auto expectedReplyCount = static_cast<uint8_t>(hexToDec(expectedByteCount));
 
   Serial.print("RemoteRegister : ");
@@ -109,18 +111,9 @@ void I2CWrap::read(uint8_t destinationAddress, uint8_t remoteRegister,
   while (!Wire.available()) {
   };
 
-  uint8_t reply[8];
   for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
-    reply[i] = WireTransferRead();
+    response_.push_back(WireTransferRead());
   }
-
-  Serial.print("Reply: ");
-  for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
-    String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
-    Serial.print(formattedReply);
-    Serial.print("   ");
-  }
-  Serial.println();
 }
 
 void I2CWrap::write(uint8_t destinationAddress, uint8_t remoteRegister,
@@ -139,6 +132,17 @@ void I2CWrap::write(uint8_t destinationAddress, uint8_t remoteRegister,
     WireTransferWrite(toSend[i]);
   }
 }
+
+void I2CWrap::printResponse() {
+  Serial.print("Reply: ");
+  for (auto &it : response_) {
+    String formattedReply = decToHex(static_cast<byte>(it), 2);
+    Serial.print(formattedReply);
+    Serial.print("   ");
+  }
+  Serial.println();
+}
+
 void I2CWrap::decodeResponse(uint8_t response, const String &stage) {
 
   Serial.print(stage + " ");

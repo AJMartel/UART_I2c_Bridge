@@ -12,6 +12,6 @@ void setup() {
 void loop() {
   uartRequest.readFormattedString();
   i2cWrap.run(uartRequest.getVerb(), uartRequest.getDestination(), uartRequest.getSendBytes(), uartRequest.getExpectedByteCount());
-  uartRequest.clear();
+  i2cWrap.printResponse();
 }
 

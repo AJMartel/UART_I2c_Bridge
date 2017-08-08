@@ -10,6 +10,7 @@ public:
   void run(const String &verb, const String &destination,
            const std::vector<String> &sendBytes,
            const String &expectedByteCount);
+  void printResponse();
 
 private:
   void decodeResponse(uint8_t response, const String &stage = "");

@@ -41,7 +41,7 @@ void UartParser::readFormattedString(bool isPrint = true) {
   // Byte0>[,0x<Send Byte1>[,...]]
   // Example1 : W:0x40:0x12,0xEF,0xAA
   // Example2 : R:0x40:0x12:1
-
+  clear();
   while (Serial.available() == 0)
     ;
 
