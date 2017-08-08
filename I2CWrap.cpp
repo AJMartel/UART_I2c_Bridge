@@ -54,35 +54,11 @@ void I2CWrap::run(const String &verb, const String &destination,
 
   response_.clear();
 
-  Serial.print("Verb : ");
-  Serial.println(verb);
-
-  Serial.print("Destination : ");
-  Serial.println(destination);
-
   auto destinationAddress = static_cast<uint8_t>(hexToDec(destination));
   auto remoteRegister = hexToDec(sendBytes[0]);
   auto expectedReplyCount = static_cast<uint8_t>(hexToDec(expectedByteCount));
 
-  Serial.print("RemoteRegister : ");
-  Serial.println(remoteRegister);
-
-  if (UartParser::kVerbRead == verb) {
-    Serial.print("Expecting : ");
-    Serial.print(expectedByteCount);
-    Serial.println(" bytes.");
-  } else if (UartParser::kVerbWrite == verb) {
-  }
-
-  if (sendBytes.size() > 1) {
-    Serial.print("Argument bytes : ");
-    for (auto it = sendBytes.begin() + 1; it != sendBytes.end(); ++it) {
-      Serial.print(hexToDec(*it));
-      Serial.print(" ");
-    }
-    Serial.println(".");
-  }
-  Serial.println("----------------------");
+  printInfo(verb, destination, expectedByteCount, sendBytes, remoteRegister);
 
   if (UartParser::kVerbRead == verb) {
     read(destinationAddress, remoteRegister, expectedReplyCount);
@@ -141,6 +117,37 @@ void I2CWrap::printResponse() {
     Serial.print("   ");
   }
   Serial.println();
+}
+
+void I2CWrap::printInfo(const String &verb, const String &destination,
+                        const String &expectedByteCount,
+                        const std::vector<String> &sendBytes,
+                        uint8_t remoteRegister) {
+  Serial.print("Verb : ");
+  Serial.println(verb);
+
+  Serial.print("Destination : ");
+  Serial.println(destination);
+
+  Serial.print("RemoteRegister : ");
+  Serial.println(remoteRegister);
+
+  if (UartParser::kVerbRead == verb) {
+    Serial.print("Expecting : ");
+    Serial.print(expectedByteCount);
+    Serial.println(" bytes.");
+  } else if (UartParser::kVerbWrite == verb) {
+  }
+
+  if (sendBytes.size() > 1) {
+    Serial.print("Argument bytes : ");
+    for (auto it = sendBytes.begin() + 1; it != sendBytes.end(); ++it) {
+      Serial.print(hexToDec(*it));
+      Serial.print(" ");
+    }
+    Serial.println(".");
+  }
+  Serial.println("----------------------");
 }
 
 void I2CWrap::decodeResponse(uint8_t response, const String &stage) {
