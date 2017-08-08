@@ -82,59 +82,63 @@ void I2CWrap::run(const String &verb, const String &destination,
   }
   Serial.println("----------------------");
 
-  uint8_t response = 255;
-
   if (UartParser::kVerbRead == verb) {
-
-    // --- Register pointer set ---
-
-    Wire.beginTransmission(destinationAddress);
-    WireTransferWrite(remoteRegister);
-    response = Wire.endTransmission();
-
-    decodeResponse(response, "[Read] Send remote register address: ");
-    delay(1);
-
-    Wire.beginTransmission(destinationAddress);
-    Wire.requestFrom(destinationAddress, expectedReplyCount);
-    while (!Wire.available()) {
-    };
-
-    uint8_t reply[8];
-    for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
-      reply[i] = WireTransferRead();
-    }
-
-    Serial.print("Reply: ");
-    for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
-      String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
-      Serial.print(formattedReply);
-      Serial.print("   ");
-    }
-    Serial.println();
-
+    read(destinationAddress, remoteRegister, expectedReplyCount);
   } else if (UartParser::kVerbWrite == verb) {
-
-    uint8_t toSend[8], i = 0;
-
-    for (auto it = sendBytes.begin() + 1; it != sendBytes.end() && i < 8;
-         ++it, ++i) {
-      toSend[i] = hexToDec(*it);
-    }
-
-    Wire.beginTransmission(destinationAddress);
-    WireTransferWrite(remoteRegister);
-
-    for (i = 0; i < sendBytes.size() && i < 8; ++i) {
-      WireTransferWrite(toSend[i]);
-    }
+    write(destinationAddress, remoteRegister, sendBytes);
   }
 
-  response = Wire.endTransmission();
+  uint8_t response = Wire.endTransmission();
   decodeResponse(response, "[End] ");
   Serial.println();
 }
 
+void I2CWrap::read(uint8_t destinationAddress, uint8_t remoteRegister,
+                   uint8_t expectedReplyCount) {
+  uint8_t response = 255;
+
+  Wire.beginTransmission(destinationAddress);
+  WireTransferWrite(remoteRegister);
+  response = Wire.endTransmission();
+
+  decodeResponse(response, "[Read] Send remote register address: ");
+  delay(1);
+
+  Wire.beginTransmission(destinationAddress);
+  Wire.requestFrom(destinationAddress, expectedReplyCount);
+  while (!Wire.available()) {
+  };
+
+  uint8_t reply[8];
+  for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
+    reply[i] = WireTransferRead();
+  }
+
+  Serial.print("Reply: ");
+  for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
+    String formattedReply = decToHex(static_cast<byte>(reply[i]), 2);
+    Serial.print(formattedReply);
+    Serial.print("   ");
+  }
+  Serial.println();
+}
+
+void I2CWrap::write(uint8_t destinationAddress, uint8_t remoteRegister,
+                    const std::vector<String> &sendBytes) {
+  uint8_t toSend[8], i = 0;
+
+  for (auto it = sendBytes.begin() + 1; it != sendBytes.end() && i < 8;
+       ++it, ++i) {
+    toSend[i] = hexToDec(*it);
+  }
+
+  Wire.beginTransmission(destinationAddress);
+  WireTransferWrite(remoteRegister);
+
+  for (i = 0; i < sendBytes.size() && i < 8; ++i) {
+    WireTransferWrite(toSend[i]);
+  }
+}
 void I2CWrap::decodeResponse(uint8_t response, const String &stage) {
 
   Serial.print(stage + " ");
