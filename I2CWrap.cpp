@@ -11,63 +11,29 @@
 #define WireTransferRead Wire.receive
 #endif
 
-// adapted from
-// https://github.com/benrugg/Arduino-Hex-Decimal-Conversion/blob/master/hex_dec.ino
-unsigned int hexToDec(const String &hexString) {
-
-  unsigned int decValue = 0;
-  int nextInt;
-
-  int i = 0;
-  if ('x' == hexString[1])
-    i = 2; // skip;
-
-  for (; i < hexString.length(); i++) {
-
-    nextInt = int(hexString.charAt(i));
-    if (nextInt >= 48 && nextInt <= 57)
-      nextInt = map(nextInt, 48, 57, 0, 9);
-    if (nextInt >= 65 && nextInt <= 70)
-      nextInt = map(nextInt, 65, 70, 10, 15);
-    if (nextInt >= 97 && nextInt <= 102)
-      nextInt = map(nextInt, 97, 102, 10, 15);
-    nextInt = constrain(nextInt, 0, 15);
-
-    decValue = (decValue * 16) + nextInt;
-  }
-
-  return decValue;
-}
-
-String decToHex(byte decValue, byte desiredStringLength) {
-
-  String hexString = String(decValue, HEX);
-  while (hexString.length() < desiredStringLength)
-    hexString = "0" + hexString;
-
-  return "0x" + hexString;
-}
-
 void I2CWrap::run(const String &verb, const String &destination,
                   const std::vector<String> &sendBytes,
                   const String &expectedByteCount) {
 
   response_.clear();
 
+  printInfo("Verb: ", verb);
+  printInfo("Destination: ", destination);
+  if (UartParser::kVerbRead == verb) {
+    printInfo("Expected bytes: ", expectedByteCount);
+  }
+  printInfo("Argument bytes :", sendBytes);
+  printInfo("Remote register :", sendBytes[0], true);
+
   auto destinationAddress = static_cast<uint8_t>(hexToDec(destination));
   auto remoteRegister = hexToDec(sendBytes[0]);
   auto expectedReplyCount = static_cast<uint8_t>(hexToDec(expectedByteCount));
-
-  printInfo(verb, destination, expectedByteCount, sendBytes, remoteRegister);
 
   if (UartParser::kVerbRead == verb) {
     read(destinationAddress, remoteRegister, expectedReplyCount);
   } else if (UartParser::kVerbWrite == verb) {
     write(destinationAddress, remoteRegister, sendBytes);
   }
-
-  uint8_t response = Wire.endTransmission();
-  printResponse(response, "[End] ");
 }
 
 void I2CWrap::read(uint8_t destinationAddress, uint8_t remoteRegister,
@@ -89,6 +55,9 @@ void I2CWrap::read(uint8_t destinationAddress, uint8_t remoteRegister,
   for (uint8_t i = 0; i < expectedReplyCount && i < 8; ++i) {
     response_.push_back(WireTransferRead());
   }
+
+  response = Wire.endTransmission();
+  printResponse(response, "[Data] Read: ", true);
 }
 
 void I2CWrap::write(uint8_t destinationAddress, uint8_t remoteRegister,
@@ -106,11 +75,13 @@ void I2CWrap::write(uint8_t destinationAddress, uint8_t remoteRegister,
   for (i = 0; i < sendBytes.size() && i < 8; ++i) {
     WireTransferWrite(toSend[i]);
   }
+  uint8_t response = Wire.endTransmission();
+  printResponse(response, "[Data] Write: ", true, true);
 }
 
-void I2CWrap::printResponse() {
+void I2CWrap::printResponse(bool extraNewLine) {
 
-  if (!verbose_)
+  if (!verbose_ || 0 == response_.size())
     return;
 
   Serial.print("Reply: ");
@@ -120,44 +91,13 @@ void I2CWrap::printResponse() {
     Serial.print("   ");
   }
   Serial.println();
+  if (extraNewLine) {
+    Serial.println();
+  }
 }
 
-void I2CWrap::printInfo(const String &verb, const String &destination,
-                        const String &expectedByteCount,
-                        const std::vector<String> &sendBytes,
-                        uint8_t remoteRegister) {
-
-  if (!verbose_)
-    return;
-
-  Serial.print("Verb : ");
-  Serial.println(verb);
-
-  Serial.print("Destination : ");
-  Serial.println(destination);
-
-  Serial.print("RemoteRegister : ");
-  Serial.println(remoteRegister);
-
-  if (UartParser::kVerbRead == verb) {
-    Serial.print("Expecting : ");
-    Serial.print(expectedByteCount);
-    Serial.println(" bytes.");
-  } else if (UartParser::kVerbWrite == verb) {
-  }
-
-  if (sendBytes.size() > 1) {
-    Serial.print("Argument bytes : ");
-    for (auto it = sendBytes.begin() + 1; it != sendBytes.end(); ++it) {
-      Serial.print(hexToDec(*it));
-      Serial.print(" ");
-    }
-    Serial.println(".");
-  }
-  Serial.println("----------------------");
-}
-
-void I2CWrap::printResponse(uint8_t response, const String &stage) {
+void I2CWrap::printResponse(uint8_t response, const String &stage,
+                            bool printDelimiter, bool extraNewLine) {
 
   if (!verbose_)
     return;
@@ -183,5 +123,27 @@ void I2CWrap::printResponse(uint8_t response, const String &stage) {
     Serial.println("No errorcode set.");
     break;
   }
-  Serial.println();
+
+  if (printDelimiter) {
+    Serial.println("----------------------");
+  }
+  if (extraNewLine) {
+    Serial.println();
+  }
+}
+
+void I2CWrap::printInfo(const String &leadingText,
+                        const std::vector<String> &toPrint,
+                        bool printDelimiter) {
+  if (toPrint.size() > 1) {
+    Serial.print("Argument bytes : ");
+    for (auto it = toPrint.begin() + 1; it != toPrint.end(); ++it) {
+      Serial.print(hexToDec(*it));
+      Serial.print(" ");
+    }
+    Serial.println(".");
+  }
+  if (printDelimiter) {
+    Serial.println("----------------------");
+  }
 }
