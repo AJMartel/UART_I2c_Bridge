@@ -1,4 +1,5 @@
-#include hexHelpers.h
+#include "Arduino.h"
+#include "hexHelpers.h"
 
 // adapted from
 // https://github.com/benrugg/Arduino-Hex-Decimal-Conversion/blob/master/hex_dec.ino
