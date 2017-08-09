@@ -14,6 +14,7 @@ public:
            const std::vector<String> &sendBytes,
            const String &expectedByteCount);
   void printResponse(bool extraNewLine = true);
+  void setVerbosity(bool verbosity) { verbose_ = verbosity; }
 
 private:
   void printResponse(uint8_t response, const String &stage = "",
